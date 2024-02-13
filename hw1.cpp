@@ -1,186 +1,80 @@
 #include <iostream>
 #include <vector>
-#include <queue>
+#include <iomanip>
+
 
 using namespace std;
 
-// Process status enum
-enum ProcessStatus {
-    READY,
-    RUNNING,
-    BLOCKED,
-    TERMINATED
-};
 
-// Process structure
 struct Process {
     int startTime;
-    int currentStep;
-    int totalSteps;
     int cpuTime;
-    int ssdReads;
-    int ssdWrites;
-    ProcessStatus status;
+    double terminationTime;
+    int physicalReads;
+    int logicalReads;
+    int physicalWrites;
 };
 
-// SSD queue structure
-queue<Process*> ssdQueue;
-
-// Process table
-vector<Process> processTable;
-
-// Function to simulate SSD access
-void simulateSSDAccess(Process* process, int elapsedTime) {
-    // Simulate SSD read
-    cout << "Simulating SSD read for Process " << process->startTime << " at time " << elapsedTime << " ms\n";
-}
-
-// Function to simulate SSD write
-void simulateSSDWrite(Process* process, int elapsedTime) {
-    // Simulate SSD write
-    cout << "Simulating SSD write for Process " << process->startTime << " at time " << elapsedTime << " ms\n";
-}
-
-// Function to handle process termination
-void terminateProcess(Process* process, int elapsedTime) {
-    // Calculate termination time with fractional milliseconds
-    double terminationTime = process->startTime + process->cpuTime;
-
-    // Print debug information
-    cout << "Start Time: " << process->startTime << " ms" << endl;
-    cout << "CPU Time: " << process->cpuTime << " ms" << endl;
-    cout << "Termination Time: " << terminationTime << " ms" << endl;
-    
-    // Output process report
-    cout << "Process " << process->startTime << " terminates at t = " << terminationTime << " ms." << endl;
-    cout << "It performed 1" << " physical read(s), 0 logical read(s), and "
-         << process->ssdWrites << " physical write(s)." << endl;
-
-    // Update process status to TERMINATED and termination time
-    process->status = TERMINATED;
-}
-
-// Function to handle process loading into memory
-void loadProcess(int startTime, int cpuTime, int ssdRead, int ssdWrite) {
-    Process process;
-    process.startTime = startTime;
-    process.currentStep = 0;
-    process.totalSteps = 4; // Assuming each process has 4 steps
-    process.cpuTime = cpuTime;
-    process.ssdReads = 0;
-    process.ssdWrites = 0;
-    process.status = READY;
-
-    processTable.push_back(process);
-}
-
-// Function to simulate CPU scheduling
-void simulateCPU(int& elapsedTime) {
-    // FCFS scheduling - process at front of the queue gets CPU
-    if (!processTable.empty() && processTable.front().status == READY) {
-        Process* currentProcess = &processTable.front();
-        currentProcess->status = RUNNING;
-
-        // Simulate CPU time
-        cout << "Simulating CPU time for Process " << currentProcess->startTime << " at time " << elapsedTime << " ms\n";
-        // ...
-
-        // Update process statistics
-        currentProcess->currentStep++;
-
-        // Check if the process has completed all steps
-        if (currentProcess->currentStep == currentProcess->totalSteps) {
-            // Process termination
-            currentProcess->status = TERMINATED;
-            terminateProcess(currentProcess, elapsedTime);
-            processTable.erase(processTable.begin()); // Remove terminated process from the table
-        } else {
-            // Process is not terminated, move it to the end of the queue
-            currentProcess->status = READY;
-            processTable.push_back(*currentProcess);
-            processTable.erase(processTable.begin()); // Remove the running process from the front
-        }
-    }
-}
-
-// Function to simulate SSD scheduling
-void simulateSSD(int& elapsedTime) {
-    // FCFS scheduling - process at front of the queue gets SSD
-    if (!ssdQueue.empty()) {
-        Process* ssdProcess = ssdQueue.front();
-
-        // Simulate SSD access
-        simulateSSDAccess(ssdProcess, elapsedTime);
-
-        // Simulate SSD write (if needed)
-        if (ssdProcess->currentStep == 2) {
-            simulateSSDWrite(ssdProcess, elapsedTime);
-        }
-
-        // Move the process back to the READY queue
-        ssdProcess->status = READY;
-        processTable.push_back(*ssdProcess);
-        ssdQueue.pop(); // Remove the process from the SSD queue
-    }
-}
 
 int main() {
-    int elapsedTime = 0;
-    int block_size = 0; // to store block size
+    int block_size = 0;
+    vector<Process> processes;
 
-    while (cin >> ws) {
-        string operation;
-        cin >> operation;
 
+    string operation;
+    int currentTime = 0;
+    double lastCoreTime = 0; // Initialize last core time as double
+    while (cin >> operation) {
         if (operation == "BSIZE") {
-            // Read block size
             cin >> block_size;
         } else if (operation == "START") {
-            // Process starts
-            int startTime;
-            cin >> startTime;
-            loadProcess(startTime, 0, 0, 0);
+            Process process;
+            cin >> process.startTime;
+            process.terminationTime = process.startTime; // Initialize termination time
+            process.physicalReads = 0;
+            process.logicalReads = 0;
+            process.physicalWrites = 0;
+            processes.push_back(process);
         } else if (operation == "CORE") {
-            // CPU time request
             int cpuTime;
             cin >> cpuTime;
-            // Update current process's CPU time
-            processTable.back().cpuTime = cpuTime;
+            processes.back().cpuTime = cpuTime;
+            processes.back().terminationTime = max(processes.back().terminationTime, lastCoreTime + cpuTime); // Update termination time
+            lastCoreTime = processes.back().terminationTime; // Update last core time
         } else if (operation == "READ") {
-            // SSD read request
-            int ssdRead;
-            cin >> ssdRead;
-            // Update current process's SSD read
-            processTable.back().ssdReads = ssdRead;
+            int bytes;
+            cin >> bytes;
+            processes.back().physicalReads++;
         } else if (operation == "WRITE") {
-            // SSD write request
-            int ssdWrite;
-            cin >> ssdWrite;
-            // Update current process's SSD write
-            processTable.back().ssdWrites = ssdWrite;
-        } else if (operation == "DISPLAY") {
-            // Display request
-            int displayTime;
-            cin >> displayTime;
-            // Simulate display time
-            // ...
-        } else if (operation == "INPUT") {
-            // Input request
-            int inputTime;
-            cin >> inputTime;
-            // Simulate input time
-            // ...
+            int bytes;
+            cin >> bytes;
+            processes.back().physicalWrites++;
         }
-
-        // Simulate time passing
-        elapsedTime++;
-
-        // Simulate CPU scheduling
-        simulateCPU(elapsedTime);
-
-        // Simulate SSD scheduling
-        simulateSSD(elapsedTime);
     }
+
+
+    // Output process reports and process states
+    cout << fixed << setprecision(0);
+    for (int i = 0; i < processes.size(); ++i) {
+        Process& process = processes[i];
+        cout << "Process " << i << " terminates at t = " << static_cast<int>(process.terminationTime) << "ms." << endl;
+        cout << "It performed " << process.physicalReads << " physical read(s), "
+             << process.logicalReads << " logical read(s), and "
+             << process.physicalWrites << " physical write(s)." << endl;
+       
+        // Output process states after each process report
+        cout << "\nProcess states:" << endl;
+        cout << "--------------" << endl;
+        for (int j = 0; j < processes.size(); ++j) {
+            if (j == i) {
+                cout << "  " << j << "  TERMINATED" << endl;
+            } else {
+                cout << "  " << j << "  RUNNING" << endl;
+            }
+        }
+        cout << endl; // Separate process reports
+    }
+
 
     return 0;
 }
