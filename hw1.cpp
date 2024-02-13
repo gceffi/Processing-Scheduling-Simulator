@@ -1,10 +1,7 @@
 #include <iostream>
 #include <vector>
-#include <iomanip>
-
 
 using namespace std;
-
 
 struct Process {
     int startTime;
@@ -15,16 +12,14 @@ struct Process {
     int physicalWrites;
 };
 
-
 int main() {
     int block_size = 0;
     vector<Process> processes;
 
+    while (cin >> ws) {
+        string operation;
+        cin >> operation;
 
-    string operation;
-    int currentTime = 0;
-    double lastCoreTime = 0; // Initialize last core time as double
-    while (cin >> operation) {
         if (operation == "BSIZE") {
             cin >> block_size;
         } else if (operation == "START") {
@@ -39,42 +34,56 @@ int main() {
             int cpuTime;
             cin >> cpuTime;
             processes.back().cpuTime = cpuTime;
-            processes.back().terminationTime = max(processes.back().terminationTime, lastCoreTime + cpuTime); // Update termination time
-            lastCoreTime = processes.back().terminationTime; // Update last core time
+            processes.back().terminationTime += cpuTime; // Update termination time
         } else if (operation == "READ") {
             int bytes;
             cin >> bytes;
             processes.back().physicalReads++;
+            // Adjust termination time for READ operation
+            processes.back().terminationTime += 0.1;
         } else if (operation == "WRITE") {
             int bytes;
             cin >> bytes;
             processes.back().physicalWrites++;
+            // Adjust termination time for WRITE operation
+            processes.back().terminationTime += 0.1;
+        } else if (operation == "DISPLAY") {
+            int displayTime;
+            cin >> displayTime;
+            processes.back().terminationTime += displayTime; // Update termination time
+        } else if (operation == "INPUT") {
+            int inputTime;
+            cin >> inputTime;
+            processes.back().terminationTime += inputTime; // Update termination time
         }
     }
 
-
-    // Output process reports and process states
-    cout << fixed << setprecision(0);
+    // Output process reports
+    cout << fixed;
+    cout.precision(1);
     for (int i = 0; i < processes.size(); ++i) {
         Process& process = processes[i];
-        cout << "Process " << i << " terminates at t = " << static_cast<int>(process.terminationTime) << "ms." << endl;
+        cout << "Process " << i << " terminates at t = " << process.terminationTime << " ms." << endl;
         cout << "It performed " << process.physicalReads << " physical read(s), "
              << process.logicalReads << " logical read(s), and "
              << process.physicalWrites << " physical write(s)." << endl;
-       
-        // Output process states after each process report
+        
+        // Output process states
         cout << "\nProcess states:" << endl;
         cout << "--------------" << endl;
         for (int j = 0; j < processes.size(); ++j) {
             if (j == i) {
                 cout << "  " << j << "  TERMINATED" << endl;
             } else {
-                cout << "  " << j << "  RUNNING" << endl;
+                if (processes[j].terminationTime > process.terminationTime) {
+                    cout << "  " << j << "  RUNNING" << endl;
+                } else {
+                    cout << "  " << j << "  TERMINATED" << endl;
+                }
             }
         }
         cout << endl; // Separate process reports
     }
-
 
     return 0;
 }
