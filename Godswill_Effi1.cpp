@@ -1,7 +1,7 @@
 //Godswill Effi
 //2088639
 //First Assignment
-//Use the WSL Terminal with g++ assignment1.cpp -o simulation
+//Use the WSL Terminal with g++ Godswill_Effi1.cpp -o simulation
 //Then Use ./simulation input10.txt for Input 10, ./simulation input11.txt for Input 11, ./simulation input12.txt for Input 12
 //, ./simulation input13.txt for Input 13, and ./simulation input14.txt for Input 14
 
