@@ -4,6 +4,8 @@
         "ostream": "cpp",
         "xstring": "cpp",
         "utility": "cpp",
-        "xutility": "cpp"
-    }
+        "xutility": "cpp",
+        "vector": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }
